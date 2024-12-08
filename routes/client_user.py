@@ -46,3 +46,17 @@ def download_file(file_id: int, db: Session = Depends(get_db), user: User = Depe
         raise HTTPException(status_code=403, detail="Not authorized to download this file")
 
     return {"file": file.filename, "filepath": file.filepath}
+
+@router.get("/download/{file_id}")
+def download_file(file_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    # Fetch the file from the database
+    file = db.query(File).filter(File.id == file_id).first()
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Check if the file belongs to the client user
+    if file.owner_id != user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to download this file")
+
+    # If the file is found and the user has permission, return the file details
+    return {"file": file.filename, "filepath": file.filepath}
